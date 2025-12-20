@@ -16,6 +16,7 @@
     pkgs.git
     pkgs.pkg-config
     pkgs.openssl
+    pkgs.cargo-nextest
   ];
 
   # https://devenv.sh/languages/
@@ -51,7 +52,7 @@
   # https://devenv.sh/tests/
   enterTest = ''
     echo "Running tests"
-    cargo test
+    cargo nextest run
   '';
 
   # https://devenv.sh/git-hooks/
