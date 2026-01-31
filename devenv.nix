@@ -10,6 +10,7 @@
   env.LD_LIBRARY_PATH = lib.makeLibraryPath [
     pkgs.openssl
   ];
+  dotenv.enable = true;
 
   # https://devenv.sh/packages/
   packages = [
@@ -17,6 +18,7 @@
     pkgs.pkg-config
     pkgs.openssl
     pkgs.cargo-nextest
+    pkgs.bunyan-rs
   ];
 
   # https://devenv.sh/languages/

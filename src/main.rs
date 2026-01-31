@@ -1,53 +1,19 @@
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use std::net::TcpListener;
-use tracing::{
-    Subscriber,
-    subscriber::{self, set_global_default},
+use zero2prod::{
+    configuration::get_configuration,
+    startup::run,
+    telemetry::{get_subscriber, init_subscriber_as_global_default},
 };
-use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
-use tracing_log::LogTracer;
-use tracing_subscriber::{EnvFilter, Registry, layer::SubscriberExt};
-use zero2prod::{configuration::get_configuration, startup::run};
-
-/// Compose multiple layers into a `tracing`'s subscriber
-///
-/// # Implementation Notes
-///
-/// We are using `impl Subscriber` as return type to avoid having to
-/// spell out the actual type of the returned subscriber, which is
-/// indeed quite complex.
-/// We need to explicitly call out that the returned subscriber is
-/// `Send` and `Sync` to make it possible to pass it to `init_subscriber`
-/// later on
-pub fn get_subscriber(name: String, env_filter: String) -> impl Subscriber + Send + Sync {
-    let env_filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
-    let formatting_layer = BunyanFormattingLayer::new(name.into(), std::io::stdout);
-
-    // The `with` method is provided by `SubscriberExt`, an extension
-    // trait for `Subscriber` exposed by `tracing_subscriber`
-    Registry::default()
-        .with(env_filter)
-        .with(JsonStorageLayer)
-        .with(formatting_layer)
-}
-
-/// Register a subscriber as global default to process span data.
-///
-/// It should only be called once!
-pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
-    LogTracer::init().expect("Failed to set logger");
-    set_global_default(subscriber).expect("Failed to set subscriber");
-}
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    let subscriber = get_subscriber("zero2prod".into(), "info".into());
-    init_subscriber(subscriber);
-    //
+    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
+    init_subscriber_as_global_default(subscriber);
     // Panic if we cant read configuration
     let configuration = get_configuration().expect("Failed to read configuration");
-    let connection_pool = PgPool::connect(&configuration.database.connection_string())
+    let connection_pool = PgPool::connect(&configuration.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to postgres");
 
