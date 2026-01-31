@@ -54,6 +54,7 @@
   # https://devenv.sh/tests/
   enterTest = ''
     echo "Running tests"
+    export DATABASE_URL="postgres://app:secret@localhost:5432/newsletter"
     cargo nextest run
   '';
 
