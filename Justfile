@@ -10,6 +10,9 @@ build:
 test:
     cargo nextest run
 
+migrate:
+    sqlx migrate run
+
 # Build the docker image
 docker-build:
     cargo sqlx prepare --workspace -- --all-targets
@@ -31,3 +34,6 @@ healthcheck:
 # 232887b5-a9b3-4c8b-8385-16c487c18997 is the ID of our app, got it from doing doctl apps list
 do-update-spec:
     doctl apps update 232887b5-a9b3-4c8b-8385-16c487c18997 --spec=spec.yaml
+
+do-add-ip-to-database-firewall:
+    doctl databases firewalls append f4f08dad-9615-4964-8f61-df9c2602c988 --rule ip_addr:$(curl -s https://api.ipify.org)
