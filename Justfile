@@ -26,3 +26,8 @@ setup-db:
 
 healthcheck:
     curl http://127.0.0.1:8000/health_check
+
+# Updates the Digital Ocean deployment, based on the values of spec.yaml
+# 232887b5-a9b3-4c8b-8385-16c487c18997 is the ID of our app, got it from doing doctl apps list
+do-update-spec:
+    doctl apps update 232887b5-a9b3-4c8b-8385-16c487c18997 --spec=spec.yaml
