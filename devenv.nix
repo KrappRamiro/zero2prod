@@ -43,6 +43,7 @@
   enterShell = ''
     hello         # Run scripts directly
     git --version # Use packages
+    export DATABASE_URL="postgres://app:secret@localhost:5432/newsletter"
   '';
 
   # https://devenv.sh/tasks/
