@@ -1,7 +1,7 @@
 use sqlx::postgres::PgPoolOptions;
 use std::net::TcpListener;
 use zero2prod::{
-    configuration::{self, get_configuration},
+    configuration::get_configuration,
     email_client::EmailClient,
     startup::run,
     telemetry::{get_subscriber, init_subscriber_as_global_default},

@@ -89,7 +89,7 @@ mod tests {
 
     use crate::{
         domain::SubscriberEmail,
-        email_client::{self, EmailClient},
+        email_client::EmailClient,
     };
 
     struct SendEmailBodyMatcher;
