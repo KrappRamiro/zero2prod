@@ -1,12 +1,11 @@
-use std::{net::TcpListener, sync::LazyLock};
+use std::{fmt::format, sync::LazyLock};
 
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use zero2prod::{
     configuration::{DatabaseSettings, get_configuration},
-    email_client::EmailClient,
-    startup::run,
+    startup::{Application, get_connection_pool},
     telemetry::{get_subscriber, init_subscriber_as_global_default},
 };
 
@@ -38,36 +37,31 @@ pub async fn spawn_app() -> TestApp {
     // All other invocations will instead skip execution.
     LazyLock::force(&TRACING);
 
-    // Port 0 is special-cased at the OS level: trying to bind port 0 will trigger an OS scan for an available port which will then be bound to the application
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to random port");
-    let port = listener.local_addr().unwrap().port();
-    let address = format!("http://127.0.0.1:{}", port);
+    let configuration = {
+        let mut c = get_configuration().expect("Failed to read configuration.");
+        // Use a different DB for each test case
+        c.database.database_name = Uuid::new_v4().to_string();
+        c.application.port = 0; // use random port
 
-    let mut configuration = get_configuration().expect("Failed to read configuration.");
-    configuration.database.database_name = Uuid::new_v4().to_string();
+        c
+    };
 
-    let sender_email = configuration
-        .email_client
-        .sender()
-        .expect("Invalid sender email address.");
-    let timeout = configuration.email_client.timeout();
-    let email_client = EmailClient::new(
-        configuration.email_client.base_url,
-        sender_email,
-        configuration.email_client.authorization_token,
-        timeout,
-    );
+    // Create and migrate the database
+    configure_database(&configuration.database).await;
 
-    let connection_pool = configure_database(&configuration.database).await;
-    let server =
-        run(listener, connection_pool.clone(), email_client).expect("Failed to bind address");
+    let application = Application::build(configuration.clone())
+        .await
+        .expect("Failed to build application");
+    let address = format!("http://127.0.0.1:{}", application.port());
+
     // Launch the server as a background task
     // tokio::spawn returns a handle to the spawned future,
     // but we have no use for it here, hence the non-binding let
-    let _ = tokio::spawn(server);
+    let _ = tokio::spawn(application.run_until_stopped());
+
     TestApp {
         address,
-        db_pool: connection_pool,
+        db_pool: get_connection_pool(&configuration.database),
     }
 }
 
