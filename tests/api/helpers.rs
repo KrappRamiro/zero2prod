@@ -1,4 +1,4 @@
-use std::{fmt::format, sync::LazyLock};
+use std::sync::LazyLock;
 
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
