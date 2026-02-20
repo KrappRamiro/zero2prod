@@ -128,7 +128,7 @@ async fn using_a_well_formatted_but_non_existing_token_fails_with_a_401() {
     // We completely bypass the subscription phase and just make a direct GET request
     // to the confirmation endpoint with a completely made-up token.
     let response = reqwest::get(&format!(
-        "{}/subscriptions/confirm?subscription_token=this-token-does-not-exist",
+        "{}/subscriptions/confirm?subscription_token=nonexisting25charstoken00",
         app.address
     ))
     .await
@@ -136,4 +136,22 @@ async fn using_a_well_formatted_but_non_existing_token_fails_with_a_401() {
 
     // Assert
     assert_eq!(response.status().as_u16(), 401);
+}
+
+#[tokio::test]
+async fn using_an_incorrectly_formatted_token_fails_with_a_400() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act
+    // Yes, i smashed my keyboard
+    let response = reqwest::get(&format!(
+    "{}/subscriptions/confirm?subscription_token=ALKJSHSHLJKAH:JKLDlhjk_<F23>_A+SDOI_@!()IH_CANY_8912uyf_app89gu;3pf9ewtp8usifqpwnh6rt_972uend-typ8",
+        app.address
+    ))
+    .await
+    .unwrap();
+
+    // Assert
+    assert_eq!(response.status().as_u16(), 400);
 }

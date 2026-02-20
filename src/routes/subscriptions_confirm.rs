@@ -12,6 +12,18 @@ pub struct Parameters {
     skip(pool)
 )]
 pub async fn confirm(parameters: web::Query<Parameters>, pool: web::Data<PgPool>) -> HttpResponse {
+    // We have to Validate the token format FIRST
+    // It must be exactly 25 characters and only contain alphanumeric ASCII characters.
+    if parameters.subscription_token.len() != 25
+        || !parameters
+            .subscription_token
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric())
+    {
+        return HttpResponse::BadRequest().finish();
+    }
+
+    // Only if it's well-formatted do we hit the database
     let sub_id = match get_subscriber_id_from_token(&pool, &parameters.subscription_token).await {
         Ok(id) => id,
         Err(_) => return HttpResponse::InternalServerError().finish(),
