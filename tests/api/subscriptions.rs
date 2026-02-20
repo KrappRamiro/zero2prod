@@ -27,6 +27,90 @@ async fn suscribe_returns_a_200_for_valid_form_data() {
 }
 
 #[tokio::test]
+async fn subscribe_allows_a_user_subscribing_two_times() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // FIXME: This should be generated better, not like a string like this
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(2)
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    let response_1 = app.post_subscriptions(body.into()).await;
+    let response_2 = app.post_subscriptions(body.into()).await;
+
+    // Assert
+    assert_eq!(200, response_1.status().as_u16());
+    assert_eq!(200, response_2.status().as_u16());
+}
+
+#[tokio::test]
+async fn a_user_that_subscribes_two_times_has_the_same_token() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // FIXME: This should be generated better, not like a string like this
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(2)
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    app.post_subscriptions(body.into()).await;
+    app.post_subscriptions(body.into()).await;
+
+    let email_requests = app.email_server.received_requests().await.unwrap();
+    let first_request_body = &email_requests[0].body;
+    let second_request_body = &email_requests[1].body;
+
+    // Assert
+    // Lets check that they are the same token
+    assert_eq!(first_request_body, second_request_body);
+}
+
+#[tokio::test]
+async fn a_user_that_subscribes_two_times_is_not_duplicated_in_the_database() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // FIXME: This should be generated better, not like a string like this
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(2)
+        .mount(&app.email_server)
+        .await;
+
+    // Act
+    app.post_subscriptions(body.into()).await;
+    app.post_subscriptions(body.into()).await;
+
+    // Verify we didn't insert a duplicate row
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+        .fetch_all(&app.db_pool)
+        .await
+        .expect("Failed to fetch saved subscriptions.");
+
+    assert_eq!(
+        saved.len(),
+        1,
+        "Expected exactly 1 subscription record in the database."
+    );
+}
+
+#[tokio::test]
 async fn subscribe_persists_the_new_subscriber() {
     // Arrange
     let app = spawn_app().await;

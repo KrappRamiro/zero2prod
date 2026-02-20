@@ -63,6 +63,32 @@ pub async fn subscribe(
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
 
+    //If the user already exists in the DB, we just resend them the confirmation email, with the
+    //same token.
+    //That only happens if a user tries to subscribe twice
+    match (get_subscriber_token_by_email(&pool, &new_subscriber.email)).await {
+        Ok(Some(existing_token)) => {
+            // They exist! Resend the email using the existing token.
+            if send_confirmation_email(&email_client, new_subscriber, &base_url.0, &existing_token)
+                .await
+                .is_err()
+            {
+                return HttpResponse::InternalServerError().finish();
+            }
+            // EARLY RETURN: They are already handled.
+            return HttpResponse::Ok().finish();
+        }
+
+        Ok(None) => {
+            // They do not exist, proceed normally.
+        }
+        Err(_) => {
+            // The database query failed
+            return HttpResponse::InternalServerError().finish();
+        }
+    }
+
+    // This will only run if they were NOT in the database (Ok(None) branch above)
     let mut transaction = match pool.begin().await {
         Ok(trans) => trans,
         Err(_) => return HttpResponse::InternalServerError().finish(),
@@ -156,6 +182,8 @@ pub async fn insert_subscriber(
     Ok(subscriber_id)
 }
 
+/// This function inserts into the subscription_tokens table, the `subscription_token` that is
+/// provided, for the `subscriber_id` that is also provided
 pub async fn store_token(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
@@ -174,4 +202,30 @@ pub async fn store_token(
         e
     })?;
     Ok(())
+}
+
+/// This function gets the token an email has, if they have one
+/// If the email does not have any token, it returns `None`, but if it has, it returns `Some(String)`
+pub async fn get_subscriber_token_by_email(
+    pool: &PgPool,
+    email: &SubscriberEmail,
+) -> Result<Option<String>, sqlx::Error> {
+    let result = sqlx::query!(
+        r#"
+        SELECT subscription_tokens.subscription_token
+        FROM subscription_tokens
+        JOIN subscriptions ON subscription_tokens.subscriber_id = subscriptions.id
+        WHERE subscriptions.email = $1
+        "#,
+        email.as_ref()
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+
+    // If a row was found, extract the string. Otherwise, return None.
+    Ok(result.map(|r| r.subscription_token))
 }
