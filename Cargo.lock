@@ -244,6 +244,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.102"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+
+[[package]]
 name = "arraydeque"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1837,7 +1843,7 @@ dependencies = [
  "rustc-hash",
  "rustls",
  "socket2 0.6.1",
- "thiserror",
+ "thiserror 2.0.17",
  "tokio",
  "tracing",
  "web-time",
@@ -1858,7 +1864,7 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "slab",
- "thiserror",
+ "thiserror 2.0.17",
  "tinyvec",
  "tracing",
  "web-time",
@@ -2417,7 +2423,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "smallvec",
- "thiserror",
+ "thiserror 2.0.17",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -2502,7 +2508,7 @@ dependencies = [
  "smallvec",
  "sqlx-core",
  "stringprep",
- "thiserror",
+ "thiserror 2.0.17",
  "tracing",
  "uuid",
  "whoami",
@@ -2541,7 +2547,7 @@ dependencies = [
  "smallvec",
  "sqlx-core",
  "stringprep",
- "thiserror",
+ "thiserror 2.0.17",
  "tracing",
  "uuid",
  "whoami",
@@ -2567,7 +2573,7 @@ dependencies = [
  "serde",
  "serde_urlencoded",
  "sqlx-core",
- "thiserror",
+ "thiserror 2.0.17",
  "tracing",
  "url",
  "uuid",
@@ -2629,11 +2635,31 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
+dependencies = [
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
 version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 2.0.17",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -3616,6 +3642,7 @@ name = "zero2prod"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "anyhow",
  "chrono",
  "claims",
  "config",
@@ -3631,6 +3658,7 @@ dependencies = [
  "serde-aux",
  "serde_json",
  "sqlx",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "tracing-actix-web",

@@ -28,6 +28,8 @@ fake = "2.9"
 quickcheck = "1.0.3"
 quickcheck_macros = "1"
 rand = { version = "0.8", features = ["std_rng"] }
+thiserror = "1"
+anyhow = "1.0.102"
 
 [dependencies.reqwest]
 version = "0.12"
