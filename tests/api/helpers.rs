@@ -54,6 +54,15 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
+    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(format!("{}/newsletters", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
     /// Extracts the email confirmation links from the email request body.
     /// It returns a ConfirmationLinks struct, which contains both the html and plain_text versions
     /// of the link

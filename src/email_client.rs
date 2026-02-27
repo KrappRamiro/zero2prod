@@ -28,7 +28,7 @@ impl EmailClient {
 
     pub async fn send_email(
         &self,
-        recipient: SubscriberEmail,
+        recipient: &SubscriberEmail,
         subject: &str,
         // Some people dont want to receive HTML emails, so we need to support plain text emails too
         html_content: &str,
@@ -87,10 +87,7 @@ mod tests {
         matchers::{any, header, header_exists, method, path},
     };
 
-    use crate::{
-        domain::SubscriberEmail,
-        email_client::EmailClient,
-    };
+    use crate::{domain::SubscriberEmail, email_client::EmailClient};
 
     struct SendEmailBodyMatcher;
 
@@ -157,7 +154,7 @@ mod tests {
 
         // Act
         let _ = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -180,7 +177,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -200,7 +197,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
@@ -219,7 +216,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(email(), &subject(), &content(), &content())
+            .send_email(&email(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
