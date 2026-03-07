@@ -1,5 +1,7 @@
 use std::sync::LazyLock;
 
+use argon2::password_hash::SaltString;
+use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
 use secrecy::Secret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
@@ -35,12 +37,52 @@ pub struct ConfirmationLinks {
     pub plain_text: reqwest::Url,
 }
 
+pub struct TestUser {
+    pub user_id: Uuid,
+    pub username: String,
+    pub password: String,
+}
+
+impl TestUser {
+    pub fn generate() -> Self {
+        Self {
+            user_id: Uuid::new_v4(),
+            username: Uuid::new_v4().to_string(),
+            password: Uuid::new_v4().to_string(),
+        }
+    }
+
+    async fn store(&self, pool: &PgPool) {
+        let salt = SaltString::generate(&mut rand::thread_rng());
+        // We don't care about the exact Argon2 parameters here
+        // given that it's for testing purposes!
+        let password_hash = Argon2::default()
+            .hash_password(self.password.as_bytes(), &salt)
+            .unwrap()
+            .to_string();
+
+        sqlx::query!(
+            "
+            INSERT INTO users (user_id, username, password_hash)
+            VALUES ($1, $2, $3)
+            ",
+            self.user_id,
+            self.username,
+            password_hash
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user");
+    }
+}
+
 pub struct TestApp {
     pub address: String,
     // Necessary for `get_confirmation_links`
     pub port: u16,
     pub db_pool: PgPool,
     pub email_server: MockServer,
+    test_user: TestUser,
 }
 
 impl TestApp {
@@ -55,8 +97,11 @@ impl TestApp {
     }
 
     pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        let username = &self.test_user.username;
+        let password = &self.test_user.password;
         reqwest::Client::new()
             .post(format!("{}/newsletters", &self.address))
+            .basic_auth(username, Some(password))
             .json(&body)
             .send()
             .await
@@ -122,12 +167,16 @@ pub async fn spawn_app() -> TestApp {
     // but we have no use for it here, hence the non-binding let
     let _ = tokio::spawn(application.run_until_stopped());
 
-    TestApp {
+    let test_app = TestApp {
         address,
         port: application_port,
         db_pool: get_connection_pool(&configuration.database),
         email_server: mock_email_server,
-    }
+        test_user: TestUser::generate(),
+    };
+
+    test_app.test_user.store(&test_app.db_pool).await;
+    test_app
 }
 
 async fn configure_database(config: &DatabaseSettings) -> PgPool {

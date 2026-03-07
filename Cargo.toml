@@ -30,6 +30,8 @@ quickcheck_macros = "1"
 rand = { version = "0.8", features = ["std_rng"] }
 thiserror = "1"
 anyhow = "1.0.102"
+base64 = "0.22.1"
+argon2 = { version = "0.5", features = ["std"] }
 
 [dependencies.reqwest]
 version = "0.12"
