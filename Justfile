@@ -26,6 +26,9 @@ setup-db:
     docker stop postgres || true
     docker rm postgres || true
     scripts/init_db.sh
+    docker stop redis || true
+    docker rm redis || true
+    scripts/init_redis.sh
 
 healthcheck:
     curl http://127.0.0.1:8000/health_check
