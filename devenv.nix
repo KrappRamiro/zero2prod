@@ -56,7 +56,7 @@
   enterTest = ''
     echo "Running tests"
     export DATABASE_URL="postgres://app:secret@localhost:5432/newsletter"
-    cargo nextest run
+    cargo nextest run --max-fail
   '';
 
   # https://devenv.sh/git-hooks/

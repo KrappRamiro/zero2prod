@@ -8,7 +8,7 @@ build:
     cargo build
 
 test:
-    cargo nextest run
+    cargo nextest run --no-fail-fast
 
 migrate:
     sqlx migrate run
